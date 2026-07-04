@@ -177,7 +177,12 @@ Movie-recommendation/
 │   ├── front_result.html           # 搜索结果
 │   ├── front_recommendation.html   # 个性化推荐页
 │   ├── front_center.html           # 个人中心
-│   └── admin_*.html (6 个)         # 管理后台
+│   ├── admin_index.html             # 数据看板
+│   ├── admin_movie.html             # 电影管理
+│   ├── admin_users.html             # 用户管理
+│   ├── admin_admins.html            # 管理员管理
+│   ├── admin_comments.html          # 评论管理
+│   └── admin_layout.html            # 后台布局
 ├── static/                         # 静态资源
 ├── spiders/                        # 爬虫脚本
 │   ├── get.py                      # 豆瓣电影数据采集
