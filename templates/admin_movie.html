@@ -1,0 +1,304 @@
+{% extends 'admin_layout.html' %}
+{% load static %}
+
+{% block title %}-电影管理{% endblock %}
+
+{% block page_title %}电影管理{% endblock %}
+
+{% block admin_content %}
+    <!-- 搜索栏 -->
+    <div class="search-bar">
+        <form action="" method="get" class="form-inline">
+            <input type="text" name="search" value="{{ search_data }}" class="form-control" placeholder="搜索电影名称">
+            <button type="submit" class="btn btn-primary">搜索</button>
+        </form>
+    </div>
+    
+    <!-- 电影列表 -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4>电影列表</h4>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addMovieModal">
+                <i class="bi bi-plus"></i> 添加电影
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>标题</th>
+                            <th>导演</th>
+                            <th>演员</th>
+                            <th>类型</th>
+                            <th>地区</th>
+                            <th>评分</th>
+                            <th>上映日期</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for movie in queryset %}
+                        <tr>
+                            <td>{{ movie.id }}</td>
+                            <td>{{ movie.title }}</td>
+                            <td>{{ movie.director }}</td>
+                            <td>{{ movie.actors }}</td>
+                            <td>{{ movie.types }}</td>
+                            <td>{{ movie.regions }}</td>
+                            <td>{{ movie.score }}</td>
+                            <td>{{ movie.date }}</td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-warning" onclick="editMovie({{ movie.id }})">
+                                    <i class="fas fa-edit"></i> 编辑
+                                </button>
+                                <button type="button" class="btn btn-sm btn-danger" onclick="deleteMovie({{ movie.id }})">
+                                    <i class="fas fa-trash"></i> 删除
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- 分页 -->
+            <div class="pagination justify-content-center">
+                {{ page_string }}
+            </div>
+        </div>
+    </div>
+    
+    <!-- 添加电影模态框 -->
+    <div class="modal fade" id="addMovieModal" tabindex="-1" role="dialog" aria-labelledby="addMovieModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addMovieModalLabel">添加电影</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addMovieForm" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="form-row">
+                            <div class="form-group col-md-12">
+                                <label for="id_title">标题</label>
+                                {{ form.title }}
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="id_director">导演</label>
+                                {{ form.director }}
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="id_actors">演员</label>
+                                {{ form.actors }}
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="id_types">类型</label>
+                                {{ form.types }}
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="id_regions">地区</label>
+                                {{ form.regions }}
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="id_score">评分</label>
+                                {{ form.score }}
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="id_date">上映日期</label>
+                                {{ form.date }}
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="id_poster">海报路径（自动生成，无需填写）</label>
+                                {{ form.poster }}
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-12">
+                                <label for="id_poster_file">上传海报</label>
+                                {{ form.poster_file }}
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="id_summary">简介</label>
+                            {{ form.summary }}
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-primary" onclick="saveMovie()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 编辑电影模态框 -->
+    <div class="modal fade" id="editMovieModal" tabindex="-1" role="dialog" aria-labelledby="editMovieModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editMovieModalLabel">编辑电影</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editMovieForm" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <input type="hidden" id="editMovieId">
+                        <div class="form-row">
+                            <div class="form-group col-md-12">
+                                <label for="edit_title">标题</label>
+                                <input type="text" name="title" id="edit_title" class="form-control">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="edit_actors">演员</label>
+                                <input type="text" name="actors" id="edit_actors" class="form-control">
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="edit_types">类型</label>
+                                <input type="text" name="types" id="edit_types" class="form-control">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="edit_regions">地区</label>
+                                <input type="text" name="regions" id="edit_regions" class="form-control">
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="edit_score">评分</label>
+                                <input type="text" name="score" id="edit_score" class="form-control">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="edit_date">上映日期</label>
+                                <input type="text" name="date" id="edit_date" class="form-control">
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="edit_poster">海报</label>
+                                <input type="file" name="poster" id="edit_poster" class="form-control-file">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_summary">简介</label>
+                            <textarea name="summary" id="edit_summary" class="form-control" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-primary" onclick="updateMovie()">更新</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- JavaScript -->
+    <script>
+        // 添加电影
+        function saveMovie() {
+            var formData = new FormData(document.getElementById('addMovieForm'));
+            $.ajax({
+                url: '/admin_movie_add/',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(data) {
+                    if (data.status) {
+                        location.reload();
+                    } else {
+                        alert('添加失败：' + JSON.stringify(data.error));
+                    }
+                },
+                error: function() {
+                    alert('添加失败，请重试');
+                }
+            });
+        }
+        
+        // 编辑电影
+        function editMovie(id) {
+            $.ajax({
+                url: '/admin_movie_detail/',
+                type: 'GET',
+                data: {uid: id},
+                success: function(data) {
+                    if (data.status) {
+                        $('#editMovieId').val(id);
+                        $('#edit_title').val(data.data.title);
+                        $('#edit_actors').val(data.data.actors);
+                        $('#edit_types').val(data.data.types);
+                        $('#edit_regions').val(data.data.regions);
+                        $('#edit_score').val(data.data.score);
+                        $('#edit_date').val(data.data.date);
+                        $('#edit_summary').val(data.data.summary);
+                        var editModal = new bootstrap.Modal(document.getElementById('editMovieModal'));
+                        editModal.show();
+                    } else {
+                        alert('获取电影信息失败：' + data.error);
+                    }
+                },
+                error: function() {
+                    alert('获取电影信息失败，请重试');
+                }
+            });
+        }
+        
+        // 更新电影
+        function updateMovie() {
+            var id = $('#editMovieId').val();
+            var formData = new FormData(document.getElementById('editMovieForm'));
+            $.ajax({
+                url: '/admin_movie_edit/?uid=' + id,
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(data) {
+                    if (data.status) {
+                        location.reload();
+                    } else {
+                        alert('更新失败：' + JSON.stringify(data.error));
+                    }
+                },
+                error: function() {
+                    alert('更新失败，请重试');
+                }
+            });
+        }
+        
+        // 删除电影
+        function deleteMovie(id) {
+            if (confirm('确定要删除这部电影吗？')) {
+                $.ajax({
+                    url: '/admin_movie_delete/',
+                    type: 'GET',
+                    data: {uid: id},
+                    success: function(data) {
+                        if (data.status) {
+                            location.reload();
+                        } else {
+                            alert('删除失败：' + data.error);
+                        }
+                    },
+                    error: function() {
+                        alert('删除失败，请重试');
+                    }
+                });
+            }
+        }
+    </script>
+{% endblock %}

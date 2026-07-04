@@ -1,0 +1,109 @@
+{% extends 'admin_layout.html' %}
+{% load static %}
+
+{% block title %}-仪表盘{% endblock %}
+
+{% block page_title %}仪表盘{% endblock %}
+
+{% block admin_content %}
+    <!-- 统计卡片 -->
+    <div class="stat-cards">
+        <div class="stat-card">
+            <h3>{{ movie_num }}</h3>
+            <p>电影总数</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ user_num }}</h3>
+            <p>用户总数</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ comment_num }}</h3>
+            <p>评论总数</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ board_num }}</h3>
+            <p>留言总数</p>
+        </div>
+    </div>
+    
+    <!-- 最近更新的电影 -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4>最近更新的电影</h4>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>标题</th>
+                            <th>导演</th>
+                            <th>评分</th>
+                            <th>上映日期</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for movie in latest_movies %}
+                        <tr>
+                            <td>{{ movie.id }}</td>
+                            <td>{{ movie.title }}</td>
+                            <td>{{ movie.director }}</td>
+                            <td>{{ movie.score }}</td>
+                            <td>{{ movie.date }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 系统信息 -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4>系统信息</h4>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group">
+                        <li class="list-group-item">当前时间：{{ current_time }}</li>
+                        <li class="list-group-item">数据库类型：MySQL</li>
+                        <li class="list-group-item">数据库地址：localhost:3306</li>
+                        <li class="list-group-item">数据库名称：django_movie</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4>快捷操作</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <a href="/admin_movie/" class="btn btn-primary btn-block mb-2">
+                                <i class="fas fa-film"></i> 管理电影
+                            </a>
+                            {% if user.is_superuser %}
+                            <a href="/admin_users/" class="btn btn-primary btn-block">
+                                <i class="fas fa-users"></i> 管理用户
+                            </a>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <a href="/front_index/" class="btn btn-success btn-block mb-2">
+                                <i class="fas fa-home"></i> 访问首页
+                            </a>
+                            <a href="/logout/" class="btn btn-danger btn-block">
+                                <i class="fas fa-sign-out-alt"></i> 退出登录
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

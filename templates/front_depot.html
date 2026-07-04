@@ -1,0 +1,151 @@
+{% extends "front_layout.html" %}
+{% load static %}
+
+{% block title %}-影片库{% endblock %}
+
+{% block css %}
+<!-- 把样式统一放在css块中，避免内联混乱，限定作用域 -->
+<style>
+    /* 筛选按钮样式：限定作用域为depot-filter，避免影响全局 */
+    .depot-filter a {
+        text-decoration: none;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 14px;
+        color: black;
+        margin-right: 10px;
+        margin-bottom: 10px;
+        transition: background-color 0.3s ease;
+        display: inline-block; /* 确保margin-bottom生效 */
+    }
+
+    .depot-filter a.active {
+        background-color: #4B70E2; /* 补充active背景色，否则白色文字看不见 */
+        color: white !important;
+    }
+
+    .depot-filter a:hover {
+        background-color: lightgray;
+    }
+
+    /* 电影卡片样式：统一海报高度，移除冗余嵌套 */
+    .movie-card {
+        height: 100%; /* 卡片高度统一 */
+    }
+
+    .movie-card-img {
+        width: 100%;
+        height: 200px;
+        object-fit: cover; /* 保持图片比例，不拉伸 */
+    }
+
+    .movie-card-title {
+        font-size: 14px;
+        white-space: nowrap; /* 标题不换行 */
+        overflow: hidden; /* 超出隐藏 */
+        text-overflow: ellipsis; /* 超出显示省略号 */
+    }
+</style>
+{% endblock %}
+
+{% block main-container %}
+<!-- 面包屑导航：替换Font Awesome图标为Bootstrap Icons -->
+<section class="inner-banner py-5">
+    <div class="w3l-breadcrumb py-lg-5">
+        <div class="container pt-5 pb-sm-4 pb-2">
+            <h4 class="inner-text-title font-weight-bold pt-5">影片库</h4>
+            <ul class="breadcrumbs-custom-path">
+                <li><a href="/front_index/">首页</a></li>
+                <li class="active">
+                    <i class="bi bi-chevron-right mx-2"></i>影片库 <!-- 替换为Bootstrap Icons -->
+                </li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- 影片库筛选+列表 -->
+<section class="w3l-courses py-5" id="courses">
+    <div class="container pb-lg-5 pb-md-4 pb-2">
+        <!-- 筛选条件区域：统一加depot-filter类限定样式作用域 -->
+        <div class="condition depot-filter">
+            <!-- 1. 类型筛选 -->
+            <div class="mb-4">
+                <h6 class="text-center mb-3">类型筛选</h6>
+                <div class="text-center mb-3">
+                    <a href="/depot/"
+                       class="mx-2 my-1{% if kwargs.depot_type_ID == '0' %} active{% endif %}">
+                        <span class="link-text">全部</span>
+                    </a>
+
+                    {% for item in type_list %}
+                        <a class="mx-2 my-1{% if item.ID == kwargs.depot_type_ID|add:0 %} active{% endif %}"
+                            href="/depot-{{ item.ID }}-{{ kwargs.depot_region_ID }}-{{ kwargs.depot_time_ID }}">
+                            <span class="link-text">{{ item.type }}</span>
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- 2. 地区筛选 -->
+            <div class="mb-4">
+                <h6 class="text-center mb-3">地区筛选</h6>
+                <div class="text-center mb-3">
+                    <a href="/depot-{{ kwargs.depot_type_ID }}-0-{{ kwargs.depot_time_ID }}"
+                       class="mx-2 my-1{% if kwargs.depot_region_ID == '0' %} active{% endif %}">
+                        <span class="link-text">全部</span>
+                    </a>
+
+                    {% for item in region_list %}
+                        <a class="mx-2 my-1{% if item.ID == kwargs.depot_region_ID|add:0 %} active{% endif %}"
+                           href="/depot-{{ kwargs.depot_type_ID }}-{{ item.ID }}-{{ kwargs.depot_time_ID }}">
+                            <span class="link-text">{{ item.region }}</span>
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- 3. 时间筛选 -->
+            <div class="mb-4">
+                <h6 class="text-center mb-3">年份筛选</h6>
+                <div class="text-center mb-3">
+                    <a href="/depot-{{ kwargs.depot_type_ID }}-{{ kwargs.depot_region_ID }}-0"
+                       class="mx-2 my-1{% if kwargs.depot_time_ID == '0' %} active{% endif %}">
+                        <span class="link-text">全部</span>
+                    </a>
+
+                    {% for item in time_list %}
+                        <a class="mx-2 my-1{% if item.ID == kwargs.depot_time_ID|add:0 %} active{% endif %}"
+                           href="/depot-{{ kwargs.depot_type_ID }}-{{ kwargs.depot_region_ID }}-{{ item.ID }}">
+                            <span class="link-text">{{ item.time }}</span>
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="mb-4">
+            <h4 class="text-center">您现在筛选的因素为：类型:{{ type_name }} 出品地区: {{ region_name }} 出品年份:{{ time_name }}</h4>
+        </div>
+        <!-- 电影列表：修正标签语法，替换字段名，移除冗余container -->
+        <div class="row justify-content-center">
+            {% for obj in queryset %}
+                <div class="col-lg-2 col-md-4 col-sm-6 mb-4">
+                    <div class="card h-100 mx-auto" style="max-width: 180px;">
+                        <a href="/movie/{{ obj.id }}/details/" class="d-block">
+                            <img class="card-img-top" src="{% static obj.poster %}" alt="{{ obj.title }}海报"
+                                style="height: 250px; object-fit: cover;">
+                        </a>
+                        <div class="card-body">
+                            <p class="card-title text-center" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ obj.title }}</p>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="col-12 text-center py-5">
+                    <p class="text-muted fs-5">暂无符合条件的电影</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

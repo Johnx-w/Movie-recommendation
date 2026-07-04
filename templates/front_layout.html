@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+
+{% load static %}
+
+
+<html lang="zh-CN"> <!-- 修正：改为中文语言属性 -->
+<head>
+    <meta charset="utf-8">
+    <!-- 修正：补充shrink-to-fit=no，适配移动端 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>电影推荐{% block title %}{% endblock %}</title>
+    <!-- 修正：补充https协议，避免字体加载失败；可选替换为国内CDN -->
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- 新增：引入Bootstrap CSS（必须，否则导航组件样式错乱） -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://css.gg/css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'assets/css/style-starter.css' %}">
+    {% block css %}{% endblock %}
+    <!-- 新增：movetop按钮样式（配合JS） -->
+    <style>
+        #movetop {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 99;
+            border: none;
+            outline: none;
+            background-color: #4B70E2;
+            color: white;
+            cursor: pointer;
+            padding: 10px 15px;
+            border-radius: 50%;
+            font-size: 18px;
+        }
+        #movetop:hover {
+            background-color: #3a5bc8;
+        }
+        /* 补充nav-fixed样式（JS中用到但无定义） */
+        .nav-fixed {
+            background-color: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 0.5rem 0;
+            transition: all 0.3s ease;
+        }
+        /* 修复导航active类样式 */
+        .nav-link.active {
+            color: #4B70E2 !important;
+            font-weight: 500;
+        }
+        /* 优化轮播图与内容区域的间距 */
+        .w3l-banner-slider {
+            margin-bottom: 0 !important;
+            padding-bottom: 0 !important;
+        }
+        .carousel {
+            margin-bottom: 0 !important;
+            height: 500px; /* 固定轮播图高度 */
+            overflow: hidden;
+        }
+        .carousel-inner {
+            height: 100%;
+        }
+        .carousel-item {
+            height: 100%;
+        }
+        .carousel-item img {
+            height: 100%;
+            object-fit: cover; /* 保持图片比例，填充容器 */
+            object-position: center; /* 图片居中显示 */
+        }
+        /* 优化main-container的间距 */
+        main {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+        }
+    </style>
+</head>
+<body>
+    <header id="site-header" class="fixed-top">
+        <div class="container">
+            <nav class="navbar navbar-expand-lg navbar-light">
+                <a class="navbar-brand" href="/front_index/">
+                    电影推荐
+                </a>
+                <button class="navbar-toggler collapsed" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#navbarScroll" aria-controls="navbarScroll" aria-expanded="false"
+                    aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarScroll">
+                    <!-- 修正：移除GET表单的csrf_token，修复图标为Bootstrap Icons -->
+                    <form id="formSearch" action="/result/" method="get" class="d-flex search-header ms-lg-2 m-auto">
+                        <input name="search" class="form-control" type="search" placeholder="请输入电影名" aria-label="Search" required>
+                        <button id="searchBtn" class="btn btn-style" type="submit"><i class="bi bi-search"></i></button>
+                    </form>
+                    <ul class="navbar-nav ms-auto my-2 my-lg-0 navbar-nav-scroll">
+                        <!-- 修正：动态判断active类（基于当前URL） -->
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/front_index/' %}active{% endif %}" aria-current="page" href="/front_index/">首页</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/rank/' %}active{% endif %}" href="/rank/">排行榜</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/depot/' %}active{% endif %}" href="/depot/">影片库</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/recommend/' %}active{% endif %}" href="/recommend/">个性化推荐</a>
+                        </li>
+                        {% if request.user.is_authenticated %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                              欢迎您，{{ user.username }}
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                              <li><a class="dropdown-item" href="/center/">个人中心</a></li>
+                              <li><a class="dropdown-item" href="/logout/">退出登录</a></li>
+                            </ul>
+                        </li>
+                        {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/login/' %}active{% endif %}" href="/login/">登录/注册</a>
+                        </li>
+                        {% endif %}
+                        {% if request.user.is_staff %}
+                         <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/admin_index/' %}active{% endif %}" href="/admin_index/">后台管理</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+                <!-- toggle switch for light and dark theme -->
+                <div class="cont-ser-position">
+                    <nav class="navigation">
+                        <div class="theme-switch-wrapper">
+                            <label class="theme-switch" for="checkbox">
+                                <input type="checkbox" id="checkbox">
+                                <div class="mode-container">
+                                    <i class="gg-sun"></i>
+                                    <i class="gg-moon"></i>
+                                </div>
+                            </label>
+                        </div>
+                    </nav>
+                </div>
+                <!-- //toggle switch for light and dark theme -->
+            </nav>
+        </div>
+    </header>
+
+    <!-- 新增：movetop按钮（JS中用到的元素） -->
+    <button onclick="topFunction()" id="movetop" title="回到顶部"><i class="bi bi-arrow-up"></i></button>
+
+    <main>
+        {% block main-container %}{% endblock %}
+    </main>
+
+    <footer class="w3l-footer-16">
+        <div class="copy-section text-center py-4">
+            <p class="copy-text py-1">&copy; 2026 推荐电影 </p>
+        </div>
+    </footer>
+
+    <script>
+        // When the user scrolls down 20px from the top of the document, show the button
+        window.onscroll = function () {
+            scrollFunction()
+        };
+
+        function scrollFunction() {
+            // 修正：增加元素存在性判断，避免JS报错
+            const movetopBtn = document.getElementById("movetop");
+            if (movetopBtn) {
+                if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+                    movetopBtn.style.display = "block";
+                } else {
+                    movetopBtn.style.display = "none";
+                }
+            }
+        }
+
+        // When the user clicks on the button, scroll to the top of the document
+        function topFunction() {
+            document.body.scrollTop = 0;
+            document.documentElement.scrollTop = 0;
+        }
+    </script>
+    <!-- //move top -->
+
+    <!-- common jquery plugin -->
+    <!-- 修正：移除重复的jQuery引入，只保留一个版本 -->
+    <script src="{% static 'assets/js/jquery-3.3.1.min.js' %}"></script>
+    <!-- //common jquery plugin -->
+
+    
+
+    <!-- theme switch js (light and dark)-->
+    <script src="{% static 'assets/js/theme-change.js' %}"></script>
+    <!-- //theme switch js (light and dark)-->
+
+    <!-- MENU-JS -->
+    <script>
+        $(window).on("scroll", function () {
+            var scroll = $(window).scrollTop();
+
+            if (scroll >= 80) {
+                $("#site-header").addClass("nav-fixed");
+            } else {
+                $("#site-header").removeClass("nav-fixed");
+            }
+        });
+
+        //Main navigation Active Class Add Remove
+        $(".navbar-toggler").on("click", function () {
+            $("header").toggleClass("active");
+        });
+        $(document).on("ready", function () {
+            if ($(window).width() > 991) {
+                $("header").removeClass("active");
+            }
+            $(window).on("resize", function () {
+                if ($(window).width() > 991) {
+                    $("header").removeClass("active");
+                }
+            });
+        });
+    </script>
+    <!-- //MENU-JS -->
+
+    <!-- disable body scroll which navbar is in active -->
+    <script>
+        $(function () {
+            $('.navbar-toggler').click(function () {
+                $('body').toggleClass('noscroll');
+            })
+        });
+    </script>
+    <!-- //disable body scroll which navbar is in active -->
+
+    <!-- bootstrap -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- 移除重复的bootstrap.min.js，改用bundle版（包含popper.js，下拉菜单需要） -->
+    <!-- //bootstrap -->
+    <!-- //Js scripts -->
+    {% block js %}{% endblock %}
+</body>
+
+</html>

@@ -1,0 +1,131 @@
+{% extends "front_layout.html" %}
+{% load static %}
+{% block title %}-排行榜{% endblock %}
+
+{% block css %}
+<!-- 排行榜标签样式，与影片库样式保持一致 -->
+<style>
+    /* 标签按钮样式：统一与影片库筛选按钮样式 */
+    .rank-tabs a {
+        text-decoration: none;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 14px;
+        color: black;
+        margin-right: 10px;
+        margin-bottom: 10px;
+        transition: background-color 0.3s ease;
+        display: inline-block;
+    }
+
+    .rank-tabs a.active {
+        background-color: #4B70E2;
+        color: white !important;
+    }
+
+    .rank-tabs a:hover {
+        background-color: lightgray;
+    }
+</style>
+{% endblock %}
+{% block main-container %}
+    <section class="inner-banner py-5">
+        <div class="w3l-breadcrumb py-lg-5">
+            <div class="container pt-5 pb-sm-4 pb-2">
+                <h4 class="inner-text-title font-weight-bold pt-5">排行榜</h4>
+                <ul class="breadcrumbs-custom-path">
+                    <li><a href="/front_index/">首页</a></li>
+                    <li class="active"><i class="fas fa-angle-right mx-2"></i>排行榜</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section class="w3l-courses py-2" id="courses">
+        <div class="container pb-lg-5 pb-md-4 pb-2">
+            <div class="h-100 p-4">
+                <!-- 排行榜标签：使用与影片库一致的样式 -->
+                <div class="rank-tabs text-center mb-4">
+                    <a href="/rank/?tab=home" class="mx-2 my-1{% if active_tab == 'home' %} active{% endif %}">
+                        <span class="link-text">总榜单</span>
+                    </a>
+                    <a href="/rank/?tab=action" class="mx-2 my-1{% if active_tab == 'action' %} active{% endif %}">
+                        <span class="link-text">动作榜</span>
+                    </a>
+                    <a href="/rank/?tab=comedy" class="mx-2 my-1{% if active_tab == 'comedy' %} active{% endif %}">
+                        <span class="link-text">喜剧榜</span>
+                    </a>
+                    <a href="/rank/?tab=love" class="mx-2 my-1{% if active_tab == 'love' %} active{% endif %}">
+                        <span class="link-text">爱情榜</span>
+                    </a>
+                    <a href="/rank/?tab=scienceFiction" class="mx-2 my-1{% if active_tab == 'scienceFiction' %} active{% endif %}">
+                        <span class="link-text">科幻榜</span>
+                    </a>
+                    <a href="/rank/?tab=terror" class="mx-2 my-1{% if active_tab == 'terror' %} active{% endif %}">
+                        <span class="link-text">恐怖榜</span>
+                    </a>
+                    <a href="/rank/?tab=plot" class="mx-2 my-1{% if active_tab == 'plot' %} active{% endif %}">
+                        <span class="link-text">剧情榜</span>
+                    </a>
+                    <a href="/rank/?tab=war" class="mx-2 my-1{% if active_tab == 'war' %} active{% endif %}">
+                        <span class="link-text">战争榜</span>
+                    </a>
+                    <a href="/rank/?tab=crime" class="mx-2 my-1{% if active_tab == 'crime' %} active{% endif %}">
+                        <span class="link-text">犯罪榜</span>
+                    </a>
+                    <a href="/rank/?tab=thriller" class="mx-2 my-1{% if active_tab == 'thriller' %} active{% endif %}">
+                        <span class="link-text">惊悚榜</span>
+                    </a>
+                    <a href="/rank/?tab=cartoon" class="mx-2 my-1{% if active_tab == 'cartoon' %} active{% endif %}">
+                        <span class="link-text">动画榜</span>
+                    </a>
+                    <a href="/rank/?tab=history" class="mx-2 my-1{% if active_tab == 'history' %} active{% endif %}">
+                        <span class="link-text">历史榜</span>
+                    </a>
+                </div>
+
+                <div class="tab-content" id="pills-tabContent">
+                    <!-- 动态内容区域 -->
+                    <div class="tab-pane fade show active" id="pills-{{ active_tab }}" role="tabpanel" aria-labelledby="pills-{{ active_tab }}-tab">
+                        <div class="row g-4">
+                            {% for obj in page_queryset %}
+                                <div class="col-md-6">
+                                    <div class="card mb-3 h-100" style="max-width: 540px;">
+                                        <div class="row g-0">
+                                            <div class="col-md-4">
+                                                <a href="/movie/{{ obj.id }}/details/">
+                                                    <img src="{% if obj.poster and obj.poster.strip %}{% static obj.poster %}{% else %}data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=={% endif %}" alt="《{{ obj.title }}》海报" class="w-100 h-100 object-fit-cover">
+                                                </a>
+                                            </div>
+                                            <div class="col-md-8">
+                                                <div class="card-body">
+                                                    <h5 class="card-title">{{ obj.title }}</h5>
+                                                    <p class="card-text">导演：{{ obj.director|default:"暂无" }}</p>
+                                                    <p class="card-text">主演：{{ obj.actors|default:"暂无" }} </p>
+                                                    <p class="card-text">类型：{{ obj.types|default:"暂无" }} </p>
+                                                    <p class="card-text"><small class="text-muted">评分：{{ obj.score|default:"暂无" }}</small></p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <div class="col-12 text-center py-5">
+                                    <p class="text-muted fs-5">暂无相关电影数据</p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <!-- 分页导航 -->
+                        {% if page_string %}
+                            <div class="mt-4 d-flex justify-content-center">
+                                <ul class="pagination">
+                                    {{ page_string|safe }}
+                                </ul>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}

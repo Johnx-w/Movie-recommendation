@@ -1,0 +1,228 @@
+{% extends 'admin_layout.html' %}
+{% load static %}
+
+{% block title %}-管理员管理{% endblock %}
+
+{% block page_title %}管理员管理{% endblock %}
+
+{% block admin_content %}
+    <!-- 搜索栏 -->
+    <div class="search-bar">
+        <form action="" method="get" class="form-inline">
+            <input type="text" name="search" value="{{ search_data }}" class="form-control" placeholder="搜索管理员用户名">
+            <button type="submit" class="btn btn-primary">搜索</button>
+            {% if request.user.is_superuser %}
+            <button type="button" class="btn btn-success ms-2" data-bs-toggle="modal" data-bs-target="#addModal">
+                添加管理员
+            </button>
+            {% endif %}
+        </form>
+    </div>
+    
+    <!-- 管理员列表 -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4>管理员列表</h4>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>用户名</th>
+                            <th>昵称</th>
+                            <th>邮箱</th>
+                            <th>类型</th>
+                            <th>注册时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for obj in queryset %}
+                        <tr>
+                            <td>{{ obj.user_ID }}</td>
+                            <td>{{ obj.username }}</td>
+                            <td>{{ obj.nickname }}</td>
+                            <td>{{ obj.email }}</td>
+                            <td>
+                                {% if obj.is_superuser %}
+                                    <span style="background-color: #dc3545; color: black; padding: 0.25rem 0.5rem; border-radius: 0.375rem; font-weight: normal;">超级管理员</span>
+                                {% else %}
+                                    <span style="background-color: #17a2b8; color: black; padding: 0.25rem 0.5rem; border-radius: 0.375rem; font-weight: normal;">普通管理员</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ obj.registration|date:"Y-m-d H:i:s" }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    {% if request.user.is_superuser %}
+                                        <button type="button" class="btn btn-sm btn-warning" onclick="resetPassword('{{ obj.user_ID }}', '{{ obj.username }}')">
+                                            重置密码
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-danger" onclick="deleteAdmin('{{ obj.user_ID }}', '{{ obj.username }}', {{ obj.is_superuser|lower }})">
+                                            删除
+                                        </button>
+                                    {% elif obj.username == request.user.username %}
+                                        <button type="button" class="btn btn-sm btn-warning" onclick="resetPassword('{{ obj.user_ID }}', '{{ obj.username }}')">
+                                            重置密码
+                                        </button>
+                                    {% else %}
+                                        <span class="text-muted">无权限操作</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- 分页 -->
+            <div class="pagination justify-content-center">
+                {{ page_string }}
+            </div>
+        </div>
+    </div>
+    
+    <!-- 添加管理员模态框 -->
+    <div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title" id="addModalLabel">添加管理员</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addForm">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="username" class="form-label">用户名</label>
+                            <input type="text" class="form-control" id="username" name="username" placeholder="请输入用户名" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">密码</label>
+                            <input type="password" class="form-control" id="password" name="password" placeholder="请输入密码" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">邮箱</label>
+                            <input type="email" class="form-control" id="email" name="email" placeholder="请输入邮箱" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="nickname" class="form-label">昵称</label>
+                            <input type="text" class="form-control" id="nickname" name="nickname" placeholder="请输入昵称">
+                        </div>
+                        {% if request.user.is_superuser %}
+                        <div class="mb-3">
+                            <label for="is_superuser" class="form-label">管理员类型</label>
+                            <select class="form-select" id="is_superuser" name="is_superuser">
+                                <option value="false">普通管理员</option>
+                                <option value="true">超级管理员</option>
+                            </select>
+                        </div>
+                        {% else %}
+                        <input type="hidden" name="is_superuser" value="false">
+                        {% endif %}
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="addAdmin()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- JavaScript -->
+    <script>
+        // 添加管理员
+        function addAdmin() {
+            // 获取表单数据
+            var username = $('#username').val();
+            var password = $('#password').val();
+            var email = $('#email').val();
+            var nickname = $('#nickname').val() || username;
+            var is_superuser = $('#is_superuser').val() === 'true';
+            var csrfToken = $('input[name="csrfmiddlewaretoken"]').val();
+            
+            // 验证表单
+            if (!username || !password || !email) {
+                alert('用户名、密码和邮箱不能为空');
+                return;
+            }
+            
+            // 发送AJAX请求
+            $.ajax({
+                url: '/admin_admin_add/',
+                type: 'POST',
+                data: {
+                    csrfmiddlewaretoken: csrfToken,
+                    username: username,
+                    password: password,
+                    email: email,
+                    nickname: nickname,
+                    is_superuser: is_superuser
+                },
+                success: function(res) {
+                    if (res.status) {
+                        alert('添加成功');
+                        window.location.reload();
+                    } else {
+                        alert('添加失败：' + res.error);
+                    }
+                },
+                error: function() {
+                    alert('添加失败，请重试');
+                }
+            });
+        }
+        
+        // 删除管理员
+        function deleteAdmin(uid, username, isSuperuser) {
+            // 不允许删除当前登录的超级管理员
+            if (isSuperuser) {
+                alert('无法删除超级管理员');
+                return;
+            }
+            
+            if (confirm('确定要删除管理员 ' + username + ' 吗？')) {
+                $.ajax({
+                    url: '/admin_admin_delete/',
+                    type: 'GET',
+                    data: { uid: uid },
+                    success: function(res) {
+                        if (res.status) {
+                            alert('删除成功');
+                            window.location.reload();
+                        } else {
+                            alert('删除失败：' + res.error);
+                        }
+                    },
+                    error: function() {
+                        alert('删除失败，请重试');
+                    }
+                });
+            }
+        }
+        
+        // 重置管理员密码
+        function resetPassword(uid, username) {
+            if (confirm('确定要重置管理员 ' + username + ' 的密码吗？重置后密码为 123456')) {
+                $.ajax({
+                    url: '/admin_admin_reset/',
+                    type: 'GET',
+                    data: { uid: uid },
+                    success: function(res) {
+                        if (res.status) {
+                            alert('重置成功，新密码为 123456');
+                        } else {
+                            alert('重置失败：' + res.error);
+                        }
+                    },
+                    error: function() {
+                        alert('重置失败，请重试');
+                    }
+                });
+            }
+        }
+    </script>
+{% endblock %}

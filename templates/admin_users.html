@@ -1,0 +1,123 @@
+{% extends 'admin_layout.html' %}
+{% load static %}
+
+{% block title %}-用户管理{% endblock %}
+
+{% block page_title %}用户管理{% endblock %}
+
+{% block admin_content %}
+    <!-- 搜索栏 -->
+    <div class="search-bar">
+        <form action="" method="get" class="form-inline">
+            <input type="text" name="search" value="{{ search_data }}" class="form-control" placeholder="搜索用户名">
+            <button type="submit" class="btn btn-primary">搜索</button>
+        </form>
+    </div>
+    
+    <!-- 用户列表 -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4>用户列表</h4>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>用户ID</th>
+                            <th>用户名</th>
+                            <th>邮箱</th>
+                            <th>昵称</th>
+                            <th>注册时间</th>
+                            <th>最后登录时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in queryset %}
+                        <tr>
+                            <td>{{ user.user_ID }}</td>
+                            <td>{{ user.username }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>{{ user.nickname }}</td>
+                            <td>{{ user.date_joined }}</td>
+                            <td>{{ user.last_login }}</td>
+                            <td>
+                                {% if user.is_staff %}
+                                    {% if request.user.is_superuser %}
+                                        <button type="button" class="btn btn-sm btn-warning" onclick="resetPassword('{{ user.user_ID }}')">
+                                            <i class="fas fa-key"></i> 重置密码
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-danger" onclick="deleteUser('{{ user.user_ID }}')">
+                                            <i class="fas fa-trash"></i> 删除用户
+                                        </button>
+                                    {% else %}
+                                        <span class="text-muted">不可操作</span>
+                                    {% endif %}
+                                {% else %}
+                                    <button type="button" class="btn btn-sm btn-warning" onclick="resetPassword('{{ user.user_ID }}')">
+                                        <i class="fas fa-key"></i> 重置密码
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-danger" onclick="deleteUser('{{ user.user_ID }}')">
+                                        <i class="fas fa-trash"></i> 删除用户
+                                    </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- 分页 -->
+            <div class="pagination justify-content-center">
+                {{ page_string }}
+            </div>
+        </div>
+    </div>
+    
+    <!-- JavaScript -->
+    <script>
+        // 重置密码
+        function resetPassword(uid) {
+            if (confirm('确定要将用户密码重置为默认密码（123456）吗？')) {
+                $.ajax({
+                    url: '/admin_users_reset/',
+                    type: 'GET',
+                    data: {uid: uid},
+                    success: function(data) {
+                        if (data.status) {
+                            alert('密码重置成功，默认密码为123456');
+                        } else {
+                            alert('密码重置失败：' + data.error);
+                        }
+                    },
+                    error: function() {
+                        alert('密码重置失败，请重试');
+                    }
+                });
+            }
+        }
+        
+        // 删除用户
+        function deleteUser(uid) {
+            if (confirm('确定要删除这个用户吗？')) {
+                $.ajax({
+                    url: '/admin_users_delete/',
+                    type: 'GET',
+                    data: {uid: uid},
+                    success: function(data) {
+                        if (data.status) {
+                            location.reload();
+                        } else {
+                            alert('删除失败：' + data.error);
+                        }
+                    },
+                    error: function() {
+                        alert('删除失败，请重试');
+                    }
+                });
+            }
+        }
+    </script>
+{% endblock %}

@@ -1,0 +1,240 @@
+{% extends "front_layout.html" %}
+{% load static %}
+
+{% block title %}-影片详情{% endblock %}
+
+{% block css %}
+<style>
+    /* 移除封面图片的放大动画效果 */
+    .card img {
+        transition: none !important;
+        transform: none !important;
+    }
+    .card img:hover {
+        transform: none !important;
+    }
+    /* 确保封面图片样式统一 */
+    .w-80 {
+        width: 80% !important;
+    }
+</style>
+{% endblock %}
+
+{% block main-container %}
+    <section class="inner-banner py-5">
+        <div class="w3l-breadcrumb py-lg-5">
+            <div class="container pt-5 pb-sm-4 pb-2">
+                <h4 class="inner-text-title font-weight-bold pt-5">影片详情</h4>
+                <ul class="breadcrumbs-custom-path">
+                    <li><a href="/front_index/">首页</a></li>
+                    <li class="active"><i class="fas fa-angle-right mx-2"></i>影片详情</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section class="w3l-courses py-2" id="courses">
+        <div class="container pb-lg-5 pb-md-4 pb-2">
+            <div class="col-lg-12 item mt-2">
+                <div class="card mb-3">
+                    {% for obj in movie_information %}
+                        <div class="row g-0">
+                            <div class="col-md-4">
+                                <img src="{% static obj.poster %}" alt="{{ obj.title }}海报" class="w-80" style="height: 400px; object-fit: cover;">
+                            </div>
+                            <div class="col-md-8">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ obj.title}}</h5>
+                                    <p class="card-text">评分：{{ obj.score}} </p>
+                                    <p class="card-text">主演：{{ obj.actors}} </p>
+                                    <p class="card-text">类型：{{ obj.types}} </p>
+                                    <p class="card-text">制片国家/地区：{{ obj.regions}} </p>
+                                    <p class="card-text">上映日期：{{ obj.date}} </p>
+                                    <p class="card-text">简介：{{ obj.summary }}</p>
+                                    <button class="btn-success" id="save_favourite" onclick="clickSaveFav()">
+                                        {% if collect %}
+                                            ❤️ 取消收藏
+                                        {% else %}
+                                            🤍 收藏
+                                        {% endif %}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-6 item mt-2">
+                    <div class="card mb-3">
+                        <div class="card-header"><h4>评论</h4></div>
+                        {% for obj in queryset %}
+                            <div class="card-body">
+                                <h6 class="card-title">用户:{{ obj.comment_user }}&nbsp;{{ obj.comment_time}}</h6>
+                                <p class="card-text">{{ obj.discussion }}</p>
+                            </div>
+                        {% endfor %}
+                        <div class="card-body text-center">
+                            <ul class="pagination ">
+                                {{ page_string }}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6 item mt-2">
+                    <div class="card mb-3">
+                        <div class="card-header"><h4>发表评论</h4></div>
+                        <form action="/comment/add/" method="get">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <select class="form-select" aria-label="Default select example" name="score">
+                                    <option selected>请对电影进行打分吧</option>
+                                    <option value="1.00">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                    <option value="6">6</option>
+                                    <option value="7">7</option>
+                                    <option value="8">8</option>
+                                    <option value="9">9</option>
+                                    <option value="10">10</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label>评论内容</label>
+                                <textarea class="form-control" id="exampleFormControlTextarea1" rows="3" name="discuss"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <div class="col-12 text-center">
+                                    <button type="submit" class="btn btn-primary" onclick="return confirm('确定要发表评论吗？');">发表</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {% block js %}
+        <script>
+        // 使用原生JavaScript的fetch API实现收藏功能
+        function clickSaveFav() {
+            // 构建请求URL
+            const url = '/collect/?movie_name={{ movie_name|urlencode }}';
+            
+            // 发送GET请求
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('网络请求失败');
+                    }
+                    return response.text();
+                })
+                .then(data => {
+                    // 更新按钮文本
+                    const btn = document.getElementById('save_favourite');
+                    btn.innerHTML = data;
+                })
+                .catch(error => {
+                    console.error('收藏请求失败:', error);
+                    // 可以添加错误提示
+                });
+        }
+        
+        // 评分功能
+        document.addEventListener('DOMContentLoaded', function() {
+            const stars = document.querySelectorAll('.star');
+            const userScore = document.getElementById('user-score');
+            
+            // 加载用户当前评分
+            function loadUserRating() {
+                {% if request.user.is_authenticated %}
+                fetch('/rate/movie/?movie_id={{ movie_ID }}')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('网络请求失败');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('加载评分数据:', data);
+                        if (data.status && data.score > 0) {
+                            userScore.textContent = data.score;
+                            // 高亮选中的星星
+                            stars.forEach(s => s.style.color = '');
+                            for (let i = 0; i < data.score; i++) {
+                                if (stars[i]) {
+                                    stars[i].style.color = '#ffc107';
+                                }
+                            }
+                        } else {
+                            userScore.textContent = '未评分';
+                            stars.forEach(s => s.style.color = '');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('加载评分失败:', error);
+                        userScore.textContent = '未评分';
+                    });
+                {% endif %}
+            }
+            
+            // 初始化加载评分
+            loadUserRating();
+            
+            // 点击星星进行评分
+            stars.forEach(star => {
+                star.addEventListener('click', function(e) {
+                    e.preventDefault(); // 阻止默认行为
+                    e.stopPropagation(); // 阻止事件冒泡
+                    
+                    const score = this.dataset.score;
+                    console.log('用户点击评分:', score);
+                    
+                    // 发送评分请求
+                    fetch('/rate/movie/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: `movie_id={{ movie_ID }}&score=${score}`
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('网络请求失败');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('评分响应:', data);
+                        if (data.status) {
+                            // 更新显示的评分
+                            userScore.textContent = score;
+                            // 高亮选中的星星
+                            stars.forEach(s => s.style.color = '');
+                            for (let i = 0; i < score; i++) {
+                                if (stars[i]) {
+                                    stars[i].style.color = '#ffc107';
+                                }
+                            }
+                            // 不刷新页面，只更新显示
+                            console.log('评分成功，当前评分：', score);
+                        } else {
+                            alert('评分失败：' + data.error);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('评分请求失败:', error);
+                        alert('评分请求失败，请稍后重试');
+                    });
+                });
+            });
+        });
+        </script>
+    {% endblock %}
+{% endblock %}
