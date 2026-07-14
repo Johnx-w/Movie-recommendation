@@ -10,6 +10,7 @@ class Movie(models.Model):
     objects = models.Manager()
 
     title = models.CharField(max_length=255, verbose_name="电影标题")
+    director = models.CharField(max_length=255, null=True, blank=True, verbose_name="导演")
     score = models.FloatField(null=True, blank=True, verbose_name="评分")
     date = models.DateField(null=True, blank=True, verbose_name="发布日期")
     # 核心修正：poster字段参数顺序（verbose_name在前，路径仅作为默认值/存储值）
