@@ -44,6 +44,27 @@
             padding: 0.5rem 0;
             transition: all 0.3s ease;
         }
+        /* 暗色主题：卡片与电影名对比度 */
+        [data-theme="dark"] .card {
+            background-color: var(--bg-lightgrey) !important;
+            color: var(--font-color);
+        }
+        [data-theme="dark"] .card .card-title,
+        [data-theme="dark"] .card .movie-title,
+        [data-theme="dark"] .card .card-text,
+        [data-theme="dark"] .card .card-header h4,
+        [data-theme="dark"] .card h4,
+        [data-theme="dark"] .card h5 {
+            color: var(--heading-color) !important;
+        }
+        [data-theme="dark"] .card .text-muted {
+            color: var(--font-color) !important;
+            opacity: 0.75;
+        }
+        [data-theme="dark"] .nav-fixed {
+            background-color: var(--bg-color);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+        }
         /* 修复导航active类样式 */
         .nav-link.active {
             color: #4B70E2 !important;

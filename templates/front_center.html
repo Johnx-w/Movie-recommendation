@@ -3,41 +3,11 @@
 {% block title %}-个人中心{% endblock %}
 {% block css %}
 <style>
-    /* 完全取消电影封面的放大效果 */
-    /* 禁用所有卡片和图片的过渡和变换效果 */
-    .card,
-    .card:hover,
-    .card a,
-    .card a:hover,
-    .card-img-top,
-    .card-img-top:hover {
-        transition: none !important;
-        transform: none !important;
-        -webkit-transition: none !important;
-        -webkit-transform: none !important;
-        -moz-transition: none !important;
-        -moz-transform: none !important;
-        -ms-transition: none !important;
-        -ms-transform: none !important;
-        -o-transition: none !important;
-        -o-transform: none !important;
-    }
-    
-    /* 确保所有卡片图片相关元素都没有放大效果 */
-    .col-lg-2.item .card,
-    .col-lg-2.item .card:hover,
-    .col-lg-2.item .card a,
-    .col-lg-2.item .card a:hover,
-    .col-lg-2.item .card-img-top,
-    .col-lg-2.item .card-img-top:hover {
+    /* 仅禁用电影封面放大，勿用 * 覆盖 transform，否则会破坏主题切换的月亮图标 */
+    .w3l-courses .card:hover img,
+    .w3l-courses .card img:hover {
         transform: none !important;
         transition: none !important;
-    }
-    
-    /* 确保没有其他选择器影响 */
-    * {
-        transition: none !important;
-        transform: none !important;
     }
 </style>
 {% endblock %}
@@ -69,7 +39,7 @@
                                             <img class="card-img-top" src="{% static obj.movie_information.poster %}" alt="{{ obj.movie_information.title }}海报" style="height: 200px; object-fit: cover;">
                                         </a>
                                         <div class="card-body">
-                                            <p class="card-title">{{ obj.movie_information.title }}</p>
+                                            <h5 class="card-title movie-title">{{ obj.movie_information.title }}</h5>
                                         </div>
                                     </div>
                                 </div>
@@ -101,7 +71,7 @@
                                     </div>
                                     <div class="col-md-8">
                                         <h5 class="card-title">{{ obj.comment_time }}</h5>
-                                        <p class="card-text">{{ obj.movie }}</p>
+                                        <p class="card-text movie-title">{{ obj.movie }}</p>
                                         <p class="card-text">{{ obj.discussion }}</p>
                                         <p class="card-text"><small class="text-muted">{{ obj.comment_score }}</small></p>
                                     </div>
