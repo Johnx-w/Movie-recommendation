@@ -281,8 +281,9 @@ def admin_admins(request):
 
 
 def admin_admin_add(request):
-    if not request.user.is_authenticated or not request.user.is_staff:
-        return JsonResponse({"status": False, "error": "权限不足"})
+    # 与模板「添加管理员」按钮一致：仅超级管理员可创建管理员，防止普通 staff 直调接口提权
+    if not request.user.is_authenticated or not request.user.is_superuser:
+        return JsonResponse({"status": False, "error": "权限不足，只有超级管理员可以添加管理员"})
 
     username = request.POST.get("username")
     password = request.POST.get("password")
@@ -292,8 +293,6 @@ def admin_admin_add(request):
 
     if not username or not password or not email:
         return JsonResponse({"status": False, "error": "用户名、密码和邮箱不能为空"})
-    if is_superuser and not request.user.is_superuser:
-        return JsonResponse({"status": False, "error": "权限不足，无法创建超级管理员"})
 
     try:
         if UserInfo.objects.filter(username=username).exists():
