@@ -26,7 +26,7 @@
 |------|---------|
 | 后端框架 | Django 6.0 + 自定义用户模型（AbstractBaseUser） |
 | 数据库 | MySQL + Django ORM + pymysql 原生 SQL |
-| 前端 | Bootstrap 4 + Django Template 渲染 |
+| 前端 | Bootstrap 5.3（CDN）+ Django Template 渲染 |
 | 推荐算法 | 协同过滤（皮尔逊相关系数 60% + 余弦相似度 40%）、用户类型偏好向量 |
 | 缓存 | Django Cache（登录锁定机制） |
 | 数据采集 | Python requests + lxml（电影海报爬虫） |
@@ -98,12 +98,12 @@ erDiagram
 
 ### 核心代码位置
 
-| 函数 | 行数 | 功能 |
+| 函数 | 位置 | 功能 |
 |------|------|------|
-| `get_user_type_vector()` | views.py:518 | 构建用户 15 维类型偏好向量 |
-| `calculate_similarity()` | views.py:553 | 计算两用户混合相似度 |
-| `get_cold_start_recommendations()` | views.py:630 | 冷启动兜底策略 |
-| `generate_recommendations()` | views.py:709 | 协同过滤主流程 |
+| `get_user_type_vector()` | `myapp/views/recommend.py` | 构建用户 15 维类型偏好向量 |
+| `calculate_similarity()` | `myapp/views/recommend.py` | 计算两用户混合相似度 |
+| `get_cold_start_recommendations()` | `myapp/views/recommend.py` | 冷启动兜底策略 |
+| `generate_recommendations()` | `myapp/views/recommend.py` | 协同过滤主流程 |
 
 ---
 
@@ -124,17 +124,20 @@ cd Movie-recommendation
 # 2. 创建虚拟环境
 python -m venv venv
 venv\Scripts\activate  # Windows
+# source venv/bin/activate  # macOS / Linux
 
 # 3. 安装依赖
-pip install django pymysql --break-system-packages
+pip install -r requirements.txt
 
-# 4. 创建数据库（MySQL）
+# 4. 配置环境变量
+copy .env.example .env  # Windows
+# cp .env.example .env  # macOS / Linux
+# 编辑 .env，填写 SECRET_KEY、数据库账号密码等
+
+# 5. 创建数据库（MySQL）
 mysql -u root -p
 CREATE DATABASE django_movie CHARACTER SET utf8mb4;
 exit;
-
-# 5. 修改 movie/settings.py 中的数据库配置
-# DATABASES → NAME / USER / PASSWORD
 
 # 6. 数据库迁移
 python manage.py migrate
@@ -158,37 +161,29 @@ python manage.py runserver
 ```
 Movie-recommendation/
 ├── movie/                          # Django 项目配置
-│   ├── settings.py                 # 数据库/应用/中间件配置
+│   ├── settings.py                 # 数据库/应用/中间件配置（支持 .env）
 │   ├── urls.py                     # 根路由
 │   └── wsgi.py
 ├── myapp/                          # 主应用
-│   ├── views.py                    # 40+ 视图函数 (1674 行)
-│   ├── models.py                   # 7 个数据模型 (160 行)
-│   ├── urls.py                     # 路由映射 (51 行)
+│   ├── views/                      # 按功能拆分的视图包
+│   │   ├── auth.py                 # 登录 / 注册 / 登出
+│   │   ├── movie.py                # 首页、排行、详情、搜索、收藏、评论
+│   │   ├── recommend.py            # 协同过滤推荐引擎
+│   │   ├── center.py               # 个人中心、留言板
+│   │   └── admin.py                # 自定义后台管理
+│   ├── models.py                   # 7 个数据模型
+│   ├── urls.py                     # 业务路由
 │   ├── pagination.py               # 自定义分页器
 │   └── migrations/                 # 数据库迁移记录
-├── templates/                      # 16 个页面模板
-│   ├── login.html                  # 登录页
-│   ├── register.html               # 注册页
-│   ├── front_index.html            # 首页
-│   ├── front_details.html          # 电影详情
-│   ├── front_rank.html             # 排行榜
-│   ├── front_depot.html            # 分类仓库
-│   ├── front_result.html           # 搜索结果
-│   ├── front_recommendation.html   # 个性化推荐页
-│   ├── front_center.html           # 个人中心
-│   ├── admin_index.html             # 数据看板
-│   ├── admin_movie.html             # 电影管理
-│   ├── admin_users.html             # 用户管理
-│   ├── admin_admins.html            # 管理员管理
-│   ├── admin_comments.html          # 评论管理
-│   └── admin_layout.html            # 后台布局
-├── static/                         # 静态资源
+├── templates/                      # 页面模板（前台 + 自定义后台）
+├── static/                         # 静态资源（海报、主题 CSS/JS）
 ├── spiders/                        # 爬虫脚本
 │   ├── get.py                      # 豆瓣电影数据采集
 │   ├── download_posters.py         # 海报下载
 │   └── sql.py                      # 数据入库
 ├── generate_test_data.py           # 测试数据生成
+├── requirements.txt                # Python 依赖
+├── .env.example                    # 环境变量模板
 ├── manage.py                       # Django 管理入口
 └── .gitignore
 ```
@@ -223,8 +218,9 @@ Movie-recommendation/
 - [ ] 数据看板接入统计图表（ECharts）
 - [ ] 推荐结果添加可解释性标注（"因为你喜欢 XX"）
 - [ ] 部署上线（PythonAnywhere / Render）
-- [ ] 敏感配置迁移至 `.env` 环境变量
+- [x] 敏感配置迁移至 `.env` 环境变量
 - [ ] 单元测试覆盖核心推荐逻辑
+- [ ] Collect / Comment 改为外键关联，减少字符串匹配与 N+1
 
 ---
 

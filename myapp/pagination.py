@@ -16,7 +16,7 @@ class Pagination(object):
         if page.isdecimal():
             page = int(page)
         else:
-            page: 1
+            page = 1
 
         self.page = page
         self.page_size = page_size

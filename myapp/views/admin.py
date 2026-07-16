@@ -1,7 +1,7 @@
 """
 后台管理模块：电影管理、用户管理、管理员管理、评论管理
 
-包含表单类：MovieModelForm、UserModelForm、AdminModelForm
+包含表单类：MovieModelForm、UserModelForm
 """
 import random
 import os
@@ -11,7 +11,6 @@ from django.shortcuts import render, redirect
 from django import forms
 from django.contrib import messages
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 
 from ..models import Movie, UserInfo, Comment, Board
 from ..pagination import Pagination
@@ -69,24 +68,13 @@ class UserModelForm(forms.ModelForm):
 
 
 # ============================================================
-# AdminModelForm
-# ============================================================
-class AdminModelForm(forms.ModelForm):
-    """管理员添加表单"""
-    class Meta:
-        model = UserInfo
-        fields = ["username", "password", "email", "nickname"]
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        for name, field in self.fields.items():
-            field.widget.attrs = {"class": "form-control", "placeholder": field.label}
-
-
-# ============================================================
 # 后台首页
 # ============================================================
 def admin_index(request):
+    if not request.user.is_authenticated or not request.user.is_staff:
+        messages.error(request, "权限不足，无法访问此页面")
+        return redirect('/front_index/')
+
     current_time = datetime.now()
     context = {
         "movie_num": Movie.objects.count(),
@@ -103,6 +91,10 @@ def admin_index(request):
 # 电影管理
 # ============================================================
 def admin_movie(request):
+    if not request.user.is_authenticated or not request.user.is_staff:
+        messages.error(request, "权限不足，无法访问此页面")
+        return redirect('/front_index/')
+
     data_dict = {}
     search_data = request.GET.get('search', "")
     if search_data:
@@ -117,8 +109,10 @@ def admin_movie(request):
     })
 
 
-@csrf_exempt
 def admin_movie_add(request):
+    if not request.user.is_authenticated or not request.user.is_staff:
+        return JsonResponse({"status": False, "error": "权限不足"})
+
     try:
         form = MovieModelForm(data=request.POST, files=request.FILES)
         if form.is_valid():
@@ -156,6 +150,9 @@ def admin_movie_add(request):
 
 
 def admin_movie_delete(request):
+    if not request.user.is_authenticated or not request.user.is_staff:
+        return JsonResponse({"status": False, "error": "权限不足"})
+
     uid = request.GET.get('uid')
     if not Movie.objects.filter(id=uid).exists():
         return JsonResponse({"status": False, 'error': "删除失败,数据不存在。"})
@@ -164,6 +161,9 @@ def admin_movie_delete(request):
 
 
 def admin_movie_detail(request):
+    if not request.user.is_authenticated or not request.user.is_staff:
+        return JsonResponse({"status": False, "error": "权限不足"})
+
     uid = request.GET.get("uid")
     try:
         movie_id = int(uid)
@@ -189,8 +189,10 @@ def admin_movie_detail(request):
     })
 
 
-@csrf_exempt
 def admin_movie_edit(request):
+    if not request.user.is_authenticated or not request.user.is_staff:
+        return JsonResponse({"status": False, "error": "权限不足"})
+
     uid = request.GET.get("uid")
     movie = Movie.objects.filter(id=uid).first()
     if not movie:
@@ -201,7 +203,6 @@ def admin_movie_edit(request):
         form.save()
         return JsonResponse({"status": True})
     return JsonResponse({"status": False, 'error': form.errors})
-
 
 # ============================================================
 # 用户管理（仅超级管理员）
@@ -279,7 +280,6 @@ def admin_admins(request):
     })
 
 
-@csrf_exempt
 def admin_admin_add(request):
     if not request.user.is_authenticated or not request.user.is_staff:
         return JsonResponse({"status": False, "error": "权限不足"})

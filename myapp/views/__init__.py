@@ -28,7 +28,7 @@ from .recommend import (
 from .center import center, board_add
 
 from .admin import (
-    MovieModelForm, UserModelForm, AdminModelForm,
+    MovieModelForm, UserModelForm,
     admin_index,
     admin_movie, admin_movie_add, admin_movie_delete,
     admin_movie_detail, admin_movie_edit,
