@@ -14,6 +14,7 @@ from django.http import JsonResponse
 
 from ..models import Movie, UserInfo, Comment, Board
 from ..pagination import Pagination
+from ..stats import get_dashboard_stats, get_type_distribution
 
 
 # ============================================================
@@ -75,14 +76,13 @@ def admin_index(request):
         messages.error(request, "权限不足，无法访问此页面")
         return redirect('/front_index/')
 
-    current_time = datetime.now()
+    # 汇总指标：pymysql 一条复合 SQL；最近列表仍走 ORM
+    stats = get_dashboard_stats()
     context = {
-        "movie_num": Movie.objects.count(),
-        "board_num": Board.objects.count(),
-        "user_num": UserInfo.objects.count(),
-        "comment_num": Comment.objects.count(),
-        "current_time": current_time,
-        "latest_movies": Movie.objects.order_by('-id')[:10]
+        **stats,
+        "type_distribution": get_type_distribution(limit=8),
+        "current_time": datetime.now(),
+        "latest_movies": Movie.objects.order_by('-id')[:10],
     }
     return render(request, 'admin_index.html', context)
 
